@@ -1,0 +1,266 @@
+/* Folio: every rule is scoped under .tpl-folio. Unlayered, so these beat Tailwind's preflight.
+   Rules here target Folio classes (fo-*) and .cms-content only, so Tailwind utilities on elements still apply. */
+
+.tpl-folio {
+  --fo-paper: #f7f1e7;
+  --fo-paper-deep: #efe5d5;
+  --fo-mat: #fffcf7;
+  --fo-ink: #2b231c;
+  --fo-ink-soft: #62554a;
+  --fo-ink-pale: #c9b8a2;
+  --fo-rule: #dccdb7;
+  --fo-clay: #9b4426;
+  --fo-clay-deep: #7c3418;
+  font-family: var(--font-folio), Georgia, "Times New Roman", serif;
+  font-optical-sizing: auto;
+  color: var(--fo-ink);
+  background: var(--fo-paper);
+}
+.tpl-folio ::selection {
+  background: #ecd2bf;
+  color: var(--fo-ink);
+}
+.tpl-folio :focus-visible {
+  outline: 2px solid var(--fo-clay);
+  outline-offset: 3px;
+}
+
+.tpl-folio .fo-wrap {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+@media (min-width: 768px) {
+  .tpl-folio .fo-wrap {
+    padding-inline: 2.5rem;
+  }
+}
+
+/* Small uppercase labels and kickers. */
+.tpl-folio .fo-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+/* Large serif display type: the opsz axis does the work, keep the weight light. */
+.tpl-folio .fo-display {
+  font-weight: 380;
+  letter-spacing: -0.015em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+/* Passe-partout mat around photographs. */
+.tpl-folio .fo-mat {
+  background: var(--fo-mat);
+  box-shadow:
+    0 0 0 1px var(--fo-rule),
+    0 1px 2px rgb(70 45 20 / 0.06),
+    0 22px 44px -26px rgb(70 45 20 / 0.4);
+}
+
+/* Drop cap on the first paragraph of a story. */
+.tpl-folio .fo-dropcap::first-letter {
+  float: left;
+  margin: 0.06em 0.12em 0 0;
+  font-size: 3.6em;
+  font-weight: 400;
+  line-height: 0.82;
+  color: var(--fo-clay);
+}
+
+/* Signature: the About lede "inks in" line by line as it rises into reading position.
+   Each word is a .fo-ink span with its own view timeline, so a line darkens together.
+   Without scroll timelines, or with reduced motion, the lede is simply full ink. */
+@keyframes fo-ink {
+  from {
+    color: var(--fo-ink-pale);
+  }
+  to {
+    color: var(--fo-ink);
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .tpl-folio .fo-ink {
+      animation: fo-ink linear both;
+      animation-timeline: view();
+      animation-range: cover 10% cover 30%;
+    }
+  }
+}
+
+/* Mission and vision: two facing pages with a soft book gutter between them. */
+@media (min-width: 768px) {
+  .tpl-folio .fo-spread {
+    background-image: linear-gradient(
+      90deg,
+      transparent calc(50% - 56px),
+      rgb(90 60 30 / 0.07) 50%,
+      transparent calc(50% + 56px)
+    );
+  }
+}
+
+/* Blog post body: the editor's saved HTML (see docs/CONTRACTS.md "Editor output").
+   Inline styles from the editor (font-family, font-size, color, text-align, mark background) win over these. */
+.tpl-folio .cms-content {
+  font-size: 1.1875rem;
+  line-height: 1.75;
+  overflow-wrap: break-word;
+}
+.tpl-folio .cms-content > * + * {
+  margin-top: 1.25em;
+}
+.tpl-folio .cms-content h2,
+.tpl-folio .cms-content h3,
+.tpl-folio .cms-content h4 {
+  text-wrap: balance;
+}
+.tpl-folio .cms-content h2 {
+  margin-top: 2.2em;
+  font-size: 2.125rem;
+  font-weight: 380;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+.tpl-folio .cms-content h3 {
+  margin-top: 1.9em;
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+.tpl-folio .cms-content h4 {
+  margin-top: 1.8em;
+  font-size: 1.25rem;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.tpl-folio .cms-content :is(h2, h3, h4) + * {
+  margin-top: 0.6em;
+}
+.tpl-folio .cms-content p[style*="justify"] {
+  hyphens: auto;
+}
+
+/* Drop cap on an opening paragraph, and a small clay end mark after the last one. */
+.tpl-folio .cms-content > p:first-child:not([style*="text-align"])::first-letter {
+  float: left;
+  margin: 0.06em 0.12em 0 0;
+  font-size: 3.6em;
+  font-weight: 400;
+  line-height: 0.82;
+  color: var(--fo-clay);
+}
+.tpl-folio .cms-content > p:last-child::after {
+  content: "";
+  display: inline-block;
+  width: 0.4em;
+  height: 0.4em;
+  margin-left: 0.5em;
+  background: var(--fo-clay);
+  transform: translateY(-0.1em) rotate(45deg);
+}
+
+.tpl-folio .cms-content ul,
+.tpl-folio .cms-content ol {
+  padding-left: 1.4em;
+}
+.tpl-folio .cms-content ul {
+  list-style: disc;
+}
+.tpl-folio .cms-content ol {
+  list-style: decimal;
+}
+.tpl-folio .cms-content li::marker {
+  color: var(--fo-clay);
+}
+.tpl-folio .cms-content li > p {
+  margin: 0;
+}
+.tpl-folio .cms-content li + li,
+.tpl-folio .cms-content li > :is(ul, ol) {
+  margin-top: 0.4em;
+}
+
+.tpl-folio .cms-content blockquote {
+  margin-block: 2.2em;
+  padding-block: 1.4em;
+  border-block: 1px solid var(--fo-rule);
+  font-size: 1.45em;
+  font-style: italic;
+  font-weight: 380;
+  line-height: 1.4;
+  text-align: center;
+  text-wrap: balance;
+}
+.tpl-folio .cms-content blockquote::before {
+  content: "“";
+  display: block;
+  height: 0.55em;
+  font-size: 2.2em;
+  font-style: normal;
+  line-height: 1;
+  color: var(--fo-clay);
+}
+.tpl-folio .cms-content blockquote > p + p {
+  margin-top: 0.6em;
+}
+
+.tpl-folio .cms-content a {
+  color: var(--fo-clay);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+.tpl-folio .cms-content a:hover {
+  color: var(--fo-clay-deep);
+  text-decoration-thickness: 2px;
+}
+.tpl-folio .cms-content mark {
+  color: inherit;
+  background-color: #f3d9ab;
+  padding: 0.04em 0.16em;
+  border-radius: 2px;
+  box-decoration-break: clone;
+}
+.tpl-folio .cms-content hr {
+  width: 5rem;
+  height: 1px;
+  margin: 3em auto;
+  border: 0;
+  background: var(--fo-clay);
+}
+
+/* Editor images carry no dimensions: reserve a 3:2 box until the real ratio is known. */
+.tpl-folio .cms-content img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: auto 3 / 2;
+  margin: 2.2em auto;
+  background: var(--fo-paper-deep);
+}
+.tpl-folio .cms-content img[data-size="small"] {
+  width: 33.333%;
+}
+.tpl-folio .cms-content img[data-size="medium"] {
+  width: 66.666%;
+}
+@media (max-width: 639px) {
+  .tpl-folio .cms-content {
+    font-size: 1.125rem;
+  }
+  .tpl-folio .cms-content img[data-size="small"] {
+    width: 45%;
+  }
+  .tpl-folio .cms-content img[data-size="medium"] {
+    width: 80%;
+  }
+}

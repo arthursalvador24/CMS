@@ -167,12 +167,22 @@ export async function getPublishedPosts(
   cacheLife("minutes");
   const safePage = Math.max(1, Math.floor(page) || 1);
   const from = (safePage - 1) * perPage;
-  const { data, error, count } = await createPublicClient()
+  const supabase = createPublicClient();
+  const { data, error, count } = await supabase
     .from("posts")
     .select(SUMMARY_COLUMNS, { count: "exact" })
     .eq("status", "published")
     .order("published_at", { ascending: false, nullsFirst: false })
     .range(from, from + perPage - 1);
+  if (error?.code === "PGRST103") {
+    // Page past the end: return an empty page with the real total.
+    const { count: total } = await supabase
+      .from("posts")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "published");
+    const t = total ?? 0;
+    return { posts: [], page: safePage, totalPages: Math.max(1, Math.ceil(t / perPage)), total: t };
+  }
   if (error) throw new Error(`Could not load posts: ${error.message}`);
   const total = count ?? 0;
   return {

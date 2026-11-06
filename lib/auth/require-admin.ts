@@ -1,10 +1,13 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 export type AdminUser = { id: string; email: string | null };
 
 /** The signed-in admin, or null. Request-time: call it inside a <Suspense> boundary or a server action. */
 export async function getAdmin(): Promise<AdminUser | null> {
+  // getClaims() reads the clock, so mark this as request-time work for Cache Components.
+  await connection();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;

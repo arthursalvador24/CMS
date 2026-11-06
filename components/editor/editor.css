@@ -1,0 +1,302 @@
+/*
+ * Blog editor look. Neutral on purpose: the admin design restyles it by changing these rules
+ * (or the --rte-* tokens), without touching RichTextEditor / EditorToolbar.
+ * Class hooks: .rte (root), .rte-bar, .rte-toolbar, .rte-group, .rte-btn, .rte-select, .rte-color,
+ * .rte-panel (.rte-linkbar, .rte-imagebar), .rte-field, .rte-action, .rte-notice, .rte-body, .rte-content.
+ */
+
+.rte {
+  --rte-bg: #ffffff;
+  --rte-fg: #1f2328;
+  --rte-muted: #59636e;
+  --rte-border: #d1d9e0;
+  --rte-hover: #f2f4f6;
+  --rte-active: #e3e8ee;
+  --rte-accent: #0b63ce;
+  --rte-danger: #b42318;
+  --rte-radius: 8px;
+  min-width: 0; /* lets the phone toolbar scroll instead of widening a grid or flex parent */
+  border: 1px solid var(--rte-border);
+  border-radius: var(--rte-radius);
+  background: var(--rte-bg);
+  color: var(--rte-fg);
+}
+
+/* ---------- toolbar ---------- */
+
+.rte-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--rte-bg);
+  border-bottom: 1px solid var(--rte-border);
+  border-radius: var(--rte-radius) var(--rte-radius) 0 0;
+}
+.rte-bar-loading {
+  min-height: 46px;
+}
+
+.rte-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 2px;
+  padding: 6px;
+}
+
+.rte-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding-right: 6px;
+  margin-right: 4px;
+  border-right: 1px solid var(--rte-border);
+}
+.rte-group:last-child {
+  border-right: 0;
+  margin-right: 0;
+}
+
+/* Phones: one scrolling row instead of five wrapped rows, so the sticky bar stays short. */
+@media (max-width: 640px) {
+  .rte-toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+  .rte-group {
+    flex: none;
+    flex-wrap: nowrap;
+  }
+}
+
+.rte-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--rte-fg);
+  cursor: pointer;
+}
+.rte-btn:hover:not(:disabled) {
+  background: var(--rte-hover);
+}
+.rte-btn[aria-pressed="true"] {
+  background: var(--rte-active);
+  color: var(--rte-accent);
+}
+.rte-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.rte-btn:focus-visible,
+.rte-select:focus-visible,
+.rte-action:focus-visible,
+.rte-color:focus-within,
+.rte-field input:focus-visible {
+  outline: 2px solid var(--rte-accent);
+  outline-offset: 1px;
+}
+
+.rte-select {
+  height: 34px;
+  max-width: 9.5rem;
+  padding: 0 6px;
+  border: 1px solid var(--rte-border);
+  border-radius: 6px;
+  background: var(--rte-bg);
+  color: var(--rte-fg);
+  font: inherit;
+  font-size: 14px;
+}
+
+.rte-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 34px;
+  padding: 0 4px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.rte-color:hover {
+  background: var(--rte-hover);
+}
+.rte-color input {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--rte-border);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+.rte-swatch-reset {
+  font-weight: 600;
+  text-decoration: line-through;
+}
+
+/* ---------- link and image panels ---------- */
+
+.rte-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px;
+  border-top: 1px solid var(--rte-border);
+  background: var(--rte-hover);
+}
+.rte-field {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 14rem;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--rte-muted);
+}
+.rte-field input {
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--rte-border);
+  border-radius: 6px;
+  background: var(--rte-bg);
+  color: var(--rte-fg);
+  font: inherit;
+  font-size: 14px;
+}
+.rte-panel-actions,
+.rte-segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.rte-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--rte-border);
+  border-radius: 6px;
+  background: var(--rte-bg);
+  color: var(--rte-fg);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.rte-action[aria-pressed="true"] {
+  border-color: var(--rte-accent);
+  color: var(--rte-accent);
+  background: var(--rte-active);
+}
+.rte-action-primary {
+  border-color: var(--rte-accent);
+  background: var(--rte-accent);
+  color: #fff;
+}
+.rte-action-danger {
+  color: var(--rte-danger);
+}
+.rte-error {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 13px;
+  color: var(--rte-danger);
+}
+.rte-notice {
+  margin: 0;
+  padding: 0 8px;
+  font-size: 13px;
+  color: var(--rte-muted);
+}
+.rte-notice:not(:empty) {
+  padding: 6px 8px;
+}
+
+/* ---------- writing area: mirrors docs/CONTRACTS.md "Editor output" ---------- */
+
+.rte-content {
+  min-height: 320px;
+  padding: 16px 20px 24px;
+  font-size: 17px;
+  line-height: 1.65;
+  outline: none;
+  overflow-wrap: break-word;
+}
+.rte-content > * + * {
+  margin-top: 0.85em;
+}
+.rte-content h2,
+.rte-content h3,
+.rte-content h4 {
+  line-height: 1.25;
+  font-weight: 700;
+}
+.rte-content h2 {
+  font-size: 1.75em;
+}
+.rte-content h3 {
+  font-size: 1.4em;
+}
+.rte-content h4 {
+  font-size: 1.15em;
+}
+.rte-content ul,
+.rte-content ol {
+  padding-left: 1.5em;
+}
+.rte-content ul {
+  list-style: disc;
+}
+.rte-content ol {
+  list-style: decimal;
+}
+.rte-content blockquote {
+  padding-left: 1em;
+  border-left: 3px solid var(--rte-border);
+  color: var(--rte-muted);
+  font-style: italic;
+}
+.rte-content hr {
+  border: 0;
+  border-top: 1px solid var(--rte-border);
+  margin: 1.5em 0;
+}
+.rte-content a {
+  color: var(--rte-accent);
+  text-decoration: underline;
+}
+.rte-content mark {
+  color: inherit;
+  background-color: #fef08a;
+  padding: 0 1px;
+  border-radius: 2px;
+}
+.rte-content img {
+  display: block;
+  margin-inline: auto;
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.rte-content img[data-size="small"] {
+  width: 33%;
+}
+.rte-content img[data-size="medium"] {
+  width: 66%;
+}
+.rte-content img[data-size="full"] {
+  width: 100%;
+}
+.rte-content img.ProseMirror-selectednode {
+  outline: 3px solid var(--rte-accent);
+  outline-offset: 2px;
+}
