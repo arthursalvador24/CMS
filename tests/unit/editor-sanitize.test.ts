@@ -30,9 +30,10 @@ const SAVED = [
   `<ol><li><p>Number</p></li></ol>`,
   `<blockquote><p>Quote</p></blockquote>`,
   `<hr />`,
-  `<img src="${IMG("a.webp")}" alt="Small one" data-size="small" />`,
+  `<img src="${IMG("a.webp")}" alt="Small one" width="800" height="600" data-size="small" />`,
+  // An older image saved before sizes existed.
   `<img src="${IMG("b.png")}" alt="" data-size="medium" />`,
-  `<img src="${IMG("c.jpg")}" alt="Full one" data-size="full" />`,
+  `<img src="${IMG("c.jpg")}" alt="Full one" width="10000" height="1" data-size="full" />`,
 ].join("");
 
 describe("sanitizePostHtml keeps the editor output", () => {
@@ -76,6 +77,12 @@ describe("sanitizePostHtml strips attacks", () => {
     ["iframe", `<p>a</p><iframe src="https://evil.example.com"></iframe>`, `<p>a</p>`],
     ["classes and ids", `<p class="x" id="y">a</p>`, `<p>a</p>`],
     ["bad data-size", `<img src="${IMG("a.webp")}" alt="" data-size="huge" />`, `<img src="${IMG("a.webp")}" alt="" />`],
+    ["percent width", `<img src="${IMG("a.webp")}" alt="" width="100%" height="600" />`, `<img src="${IMG("a.webp")}" alt="" height="600" />`],
+    ["negative height", `<img src="${IMG("a.webp")}" alt="" width="800" height="-5" />`, `<img src="${IMG("a.webp")}" alt="" width="800" />`],
+    ["exponent width", `<img src="${IMG("a.webp")}" alt="" width="1e9" />`, `<img src="${IMG("a.webp")}" alt="" />`],
+    ["non-numeric sizes", `<img src="${IMG("a.webp")}" alt="" width="auto" height="12px" />`, `<img src="${IMG("a.webp")}" alt="" />`],
+    ["zero, too big, decimal, padded", `<img src="${IMG("a.webp")}" alt="" width="0" height="10001" />` + `<img src="${IMG("a.webp")}" alt="" width="12.5" height=" 40" />`, `<img src="${IMG("a.webp")}" alt="" /><img src="${IMG("a.webp")}" alt="" />`],
+    ["sizes on other tags", `<p width="10" height="10">a</p>`, `<p>a</p>`],
     ["unlisted tags keep their text", `<h1>T</h1><div>d</div>`, `Td`],
   ];
   it.each(cases)("%s", (_name, dirty, clean) => {
@@ -93,8 +100,8 @@ class FakeNode {
   children: FakeNode[] = [];
   attrs = new Map<string, string>();
   constructor(public nodeType: number, public tag = "", public text = "") {}
-  setAttribute(name: string, value: string) {
-    this.attrs.set(name, value);
+  setAttribute(name: string, value: unknown) {
+    this.attrs.set(name, String(value)); // like the DOM: width 800 becomes "800"
   }
   appendChild(child: FakeNode) {
     this.children.push(child);
@@ -133,7 +140,10 @@ const heading = (level: number, textAlign: string | null, text: string): JSONCon
   attrs: { level, textAlign },
   content: [t(text)],
 });
-const image = (src: string, alt: string, size: string): JSONContent => ({ type: "image", attrs: { src, alt, size } });
+const image = (src: string, alt: string, size: string, width?: number, height?: number): JSONContent => ({
+  type: "image",
+  attrs: { src, alt, size, width, height },
+});
 const sp = t(" ");
 
 const DOC: JSONContent = {
@@ -171,9 +181,9 @@ const DOC: JSONContent = {
     { type: "orderedList", content: [{ type: "listItem", content: [para(null, t("Number"))] }] },
     { type: "blockquote", content: [para(null, t("Quote"))] },
     { type: "horizontalRule" },
-    image(IMG("a.webp"), "Small one", "small"),
+    image(IMG("a.webp"), "Small one", "small", 800, 600),
     image(IMG("b.png"), "", "medium"),
-    image(IMG("c.jpg"), "Full one", "full"),
+    image(IMG("c.jpg"), "Full one", "full", 10000, 1),
   ],
 };
 

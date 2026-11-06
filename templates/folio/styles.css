@@ -237,15 +237,18 @@
   background: var(--fo-clay);
 }
 
-/* Editor images carry no dimensions: reserve a 3:2 box until the real ratio is known. */
+/* The width/height attributes give each image its ratio before load (height: auto keeps it). */
 .tpl-folio .cms-content img {
   display: block;
   width: 100%;
   max-width: 100%;
   height: auto;
-  aspect-ratio: auto 3 / 2;
   margin: 2.2em auto;
   background: var(--fo-paper-deep);
+}
+/* Older images saved without a size: reserve 3:2 until they load. */
+.tpl-folio .cms-content img:not([width][height]) {
+  aspect-ratio: auto 3 / 2;
 }
 .tpl-folio .cms-content img[data-size="small"] {
   width: 33.333%;

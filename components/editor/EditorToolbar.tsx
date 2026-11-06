@@ -50,6 +50,19 @@ export function normalizeHref(input: string): string | null {
   return null;
 }
 
+/** Natural pixel size of an image (as the browser shows it), or null when it cannot be decoded or tops 10000 px. */
+export function naturalSize(src: string): Promise<{ width: number; height: number } | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    // The sanitizer keeps sizes from 1 to 10000 only, so a bigger image is saved without a size.
+    const fits = (n: number) => n >= 1 && n <= 10000;
+    img.onload = () =>
+      resolve(fits(img.naturalWidth) && fits(img.naturalHeight) ? { width: img.naturalWidth, height: img.naturalHeight } : null);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
 function useToolbarState(editor: Editor) {
   return useEditorState({
     editor,
@@ -179,14 +192,16 @@ export function EditorToolbar({ editor, uploadImage }: { editor: Editor; uploadI
 
   const insertImage = async (file: File | undefined) => {
     if (!file) return;
-    if (file.size > MAX_UPLOAD_BYTES) return setNotice("Images must be 5 MB or smaller.");
+    if (file.size > MAX_UPLOAD_BYTES) return setNotice("Images must be 4 MB or smaller.");
     setNotice(null);
     setUploading(true);
+    const local = URL.createObjectURL(file);
     try {
-      const result = await uploadImage(file);
+      // Read the size from the local file while it uploads (uploads are stored as-is, so it matches).
+      const [result, natural] = await Promise.all([uploadImage(file), naturalSize(local)]);
       if (!result.ok) return setNotice(result.error);
       const src = result.data.url;
-      const image = { type: "image", attrs: { src, alt: "", size: "full" } };
+      const image = { type: "image", attrs: { src, alt: "", size: "full", ...natural } };
       const sel = editor.state.selection;
       // With an image selected, add the new one after it instead of replacing it.
       if (sel instanceof NodeSelection) editor.chain().focus().insertContentAt(sel.to, image).run();
@@ -202,6 +217,7 @@ export function EditorToolbar({ editor, uploadImage }: { editor: Editor; uploadI
     } catch {
       setNotice("Upload failed. Please try again.");
     } finally {
+      URL.revokeObjectURL(local);
       setUploading(false);
     }
   };

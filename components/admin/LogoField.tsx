@@ -3,18 +3,18 @@
 import { useRef, useState } from "react";
 import { CircleAlert, CircleCheck, ImageUp, LoaderCircle, Trash2 } from "lucide-react";
 import { removeLogo, uploadLogo } from "@/lib/cms/actions/site";
+import { MAX_UPLOAD_BYTES } from "@/lib/cms/upload";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { NETWORK_ERROR } from "./Field";
 import { buttonGhost, buttonSecondary } from "./ui";
 import { useUnsavedWarning } from "./useUnsavedWarning";
 
 export const IMAGE_ACCEPT = "image/png,image/jpeg,image/webp";
-const MAX_BYTES = 5 * 1024 * 1024;
 
 /** Same limits as the server (lib/cms/upload.ts), checked first so a wrong file fails at once. */
 export function checkImageFile(file: File): string | null {
   if (!IMAGE_ACCEPT.split(",").includes(file.type)) return "Use a PNG, JPG or WebP image.";
-  if (file.size > MAX_BYTES) return "Images must be 5 MB or smaller.";
+  if (file.size > MAX_UPLOAD_BYTES) return "Images must be 4 MB or smaller.";
   return null;
 }
 
@@ -102,7 +102,7 @@ export function LogoField({ initialUrl }: { initialUrl: string | null }) {
             </button>
           ) : null}
         </div>
-        <p className="text-sm text-stone-500">PNG, JPG or WebP, up to 5 MB. A transparent PNG works best. Saves right away.</p>
+        <p className="text-sm text-stone-500">PNG, JPG or WebP, up to 4 MB. A transparent PNG works best. Saves right away.</p>
         <p role="status" aria-live="polite" className="text-sm empty:hidden">
           {status.kind === "busy" ? <span className="text-stone-600">{status.text}</span> : null}
           {status.kind === "done" ? (

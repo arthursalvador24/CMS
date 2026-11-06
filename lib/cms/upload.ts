@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { MEDIA_BUCKET } from "./media";
 
-export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+// 4 MB keeps uploads under the ~4.5 MB request limit of serverless hosts such as Vercel.
+export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 export type UploadFolder = "logo" | "slides" | "posts" | "inline";
 
 const EXTENSIONS = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" } as const;
@@ -23,7 +24,7 @@ export type ImageCheck = { ok: true; type: ImageType; ext: string } | { ok: fals
 
 export async function validateImage(file: unknown): Promise<ImageCheck> {
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Choose an image to upload." };
-  if (file.size > MAX_UPLOAD_BYTES) return { ok: false, error: "Images must be 5 MB or smaller." };
+  if (file.size > MAX_UPLOAD_BYTES) return { ok: false, error: "Images must be 4 MB or smaller." };
   const head = new Uint8Array(await file.slice(0, 12).arrayBuffer());
   const type = sniffImageType(head);
   if (!type) return { ok: false, error: "Use a PNG, JPG or WebP image." };

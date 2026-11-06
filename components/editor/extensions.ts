@@ -17,13 +17,21 @@ export type ImageSize = (typeof EDITOR_IMAGE_SIZES)[number];
 export const ALIGNMENTS = ["left", "center", "right", "justify"] as const;
 export const SAFE_HREF = /^(?:https?:\/\/|mailto:)/i;
 const MEDIA_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/${MEDIA_BUCKET}/`;
+/** Natural pixel size as a whole number from 1 to 10000 (same rule as lib/cms/sanitize.ts). */
+const PIXELS = /^(?:[1-9]\d{0,3}|10000)$/;
+const pixels = (value: string | null) => (PIXELS.test(value ?? "") ? Number(value) : null);
 
-/** Body image: block node with alt and data-size; only cms-media URLs are accepted (paste included). */
+/**
+ * Body image: block node with alt, data-size and its natural width and height (so pages reserve its space);
+ * only cms-media URLs are accepted (paste included). Older images without a size still load.
+ */
 export const CmsImage = Image.extend({
   addAttributes() {
     return {
       src: { default: null },
       alt: { default: "", parseHTML: (el) => el.getAttribute("alt") ?? "" },
+      width: { default: null, parseHTML: (el) => pixels(el.getAttribute("width")) },
+      height: { default: null, parseHTML: (el) => pixels(el.getAttribute("height")) },
       size: {
         default: "full" satisfies ImageSize,
         parseHTML: (el) => {

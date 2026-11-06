@@ -1,10 +1,12 @@
 "use client";
 
+import type { Slice } from "@tiptap/pm/model";
+import type { EditorView } from "@tiptap/pm/view";
 import { EditorContent, useEditor, type JSONContent } from "@tiptap/react";
 import { useEffect, useRef } from "react";
 import type { ActionResult } from "@/lib/cms/action-result";
 import { uploadInlineImage } from "@/lib/cms/actions/posts";
-import { EditorToolbar } from "./EditorToolbar";
+import { EditorToolbar, naturalSize } from "./EditorToolbar";
 import { editorExtensions } from "./extensions";
 import "./editor.css";
 
@@ -46,6 +48,29 @@ function cleanPastedHtml(html: string): string {
   return doc.body.innerHTML;
 }
 
+const sized = (attrs: Record<string, unknown>) => Boolean(attrs.width && attrs.height);
+
+/**
+ * Pasted or dropped images have no size unless the copied HTML carried one: load each, then set its
+ * natural width and height outside the undo history. Returns false so the normal paste or drop goes on.
+ */
+function sizePastedImages(view: EditorView, slice: Slice): boolean {
+  slice.content.descendants((node) => {
+    if (node.type.name !== "image" || sized(node.attrs)) return;
+    const src = node.attrs.src as string;
+    void naturalSize(src).then((size) => {
+      if (!size || view.isDestroyed) return;
+      const { tr } = view.state;
+      view.state.doc.descendants((n, pos) => {
+        if (n.type.name === "image" && n.attrs.src === src && !sized(n.attrs))
+          tr.setNodeAttribute(pos, "width", size.width).setNodeAttribute(pos, "height", size.height);
+      });
+      if (tr.docChanged) view.dispatch(tr.setMeta("addToHistory", false));
+    });
+  });
+  return false;
+}
+
 /**
  * Blog post editor. Structure and class hooks only (rte-*); the look lives in editor.css.
  * Remount it (change its key) to load a different post.
@@ -70,6 +95,8 @@ export function RichTextEditor({
     editorProps: {
       attributes: { class: "rte-content", role: "textbox", "aria-multiline": "true", "aria-label": label },
       transformPastedHTML: cleanPastedHtml,
+      handlePaste: (view, _event, slice) => sizePastedImages(view, slice),
+      handleDrop: (view, _event, slice) => sizePastedImages(view, slice),
     },
     // structuredClone: ProseMirror builds attrs with Object.create(null), which server actions cannot send.
     onUpdate: ({ editor }) => onChangeRef.current?.({ json: structuredClone(editor.getJSON()), html: editor.getHTML() }),

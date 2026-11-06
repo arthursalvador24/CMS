@@ -15,6 +15,8 @@ const oneOf = (values: readonly string[]) => values.map((v) => new RegExp(`^${es
 const HEX = [/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i];
 const ALIGN = { "text-align": oneOf(["left", "center", "right", "justify"]) };
 const SAFE_HREF = /^(?:https?:\/\/|mailto:)/i;
+/** Image width/height: a whole number of pixels from 1 to 10000. */
+const PIXELS = /^(?:[1-9]\d{0,3}|10000)$/;
 
 export const MEDIA_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/${MEDIA_BUCKET}/`;
 /** cms-media file URL such as .../cms-media/inline/<uuid>.webp (no "..", query or hash). */
@@ -38,7 +40,7 @@ const OPTIONS: sanitizeHtml.IOptions = {
     a: ["href"],
     mark: ["style"],
     span: ["style"],
-    img: ["src", "alt", "data-size"],
+    img: ["src", "alt", "width", "height", "data-size"],
   },
   allowedStyles: {
     p: ALIGN,
@@ -64,9 +66,14 @@ const OPTIONS: sanitizeHtml.IOptions = {
       const kept: sanitizeHtml.Attributes = SAFE_HREF.test(href) ? { href } : {};
       return { tagName, attribs: kept };
     },
-    img: (tagName, { "data-size": size, ...attribs }) => ({
+    img: (tagName, { width, height, "data-size": size, ...attribs }) => ({
       tagName,
-      attribs: (EDITOR_IMAGE_SIZES as readonly string[]).includes(size) ? { ...attribs, "data-size": size } : attribs,
+      attribs: {
+        ...attribs,
+        ...(PIXELS.test(width ?? "") ? { width } : {}),
+        ...(PIXELS.test(height ?? "") ? { height } : {}),
+        ...((EDITOR_IMAGE_SIZES as readonly string[]).includes(size) ? { "data-size": size } : {}),
+      },
     }),
   },
   exclusiveFilter: (frame) => {

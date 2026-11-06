@@ -42,43 +42,55 @@ export function PostEditor({ post, activeTemplate }: { post: Post; activeTemplat
   const [status, setStatus] = useState(post.status);
   const [publishedAt, setPublishedAt] = useState(post.publishedAt);
   const [coverUrl, setCoverUrl] = useState(post.coverUrl);
-  const [busy, setBusy] = useState<null | "publish" | "cover" | "delete">(null);
+  const [busy, setBusy] = useState<null | "publish" | "update" | "cover" | "delete">(null);
   const [message, setMessage] = useState<Message>(null);
   const [coverError, setCoverError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const content = useRef({ json: post.contentJson, html: post.contentHtml });
   const coverInput = useRef<HTMLInputElement>(null);
 
-  const autosave = useAutosave(() =>
-    savePost({
-      id: post.id,
-      title,
-      slug,
-      excerpt,
-      contentJson: content.current.json as SavePostInput["contentJson"],
-      contentHtml: content.current.html,
-    }),
+  const published = status === "published";
+  // Drafts autosave. A published post keeps edits on screen until "Update post", so half-typed text never goes live.
+  const autosave = useAutosave(
+    () =>
+      savePost({
+        id: post.id,
+        title,
+        slug,
+        excerpt,
+        contentJson: content.current.json as SavePostInput["contentJson"],
+        contentHtml: content.current.html,
+      }),
+    { auto: !published },
   );
   const errors = autosave.fieldErrors;
-  useUnsavedWarning(autosave.status === "unsaved" || autosave.status === "saving" || autosave.status === "error" || busy !== null);
+  const hasEdits = autosave.status === "unsaved" || autosave.status === "error";
+  useUnsavedWarning(hasEdits || autosave.status === "saving" || busy !== null);
 
   const previewHref = `/preview/${activeTemplate}/post/${post.id}`;
-  const published = status === "published";
+  // Saving a published post puts it live, so Preview waits until the edits are saved with "Update post".
+  const previewOff = published && hasEdits;
+
+  /** Every edit: an old "Published" or "Updated" note no longer describes what is on screen. */
+  const edited = () => {
+    setMessage(null);
+    autosave.markDirty();
+  };
 
   const onTitle = (value: string) => {
     setTitle(value);
     if (slugLinked && value.trim()) setSlug(slugify(value));
-    autosave.markDirty();
+    edited();
   };
 
   const onContent = (value: EditorValue) => {
     content.current = value;
-    autosave.markDirty();
+    edited();
   };
 
-  /** Save first, then open the preview, so it shows what is on screen. */
+  /** Drafts save first, then open the preview, so it shows what is on screen. */
   const openPreview = async (event: MouseEvent<HTMLAnchorElement>) => {
-    if (autosave.status !== "unsaved" && autosave.status !== "error") return; // nothing pending: plain link
+    if (!hasEdits) return; // nothing pending: plain link
     event.preventDefault();
     const tab = window.open("", "_blank");
     await autosave.flush();
@@ -89,16 +101,17 @@ export function PostEditor({ post, activeTemplate }: { post: Post; activeTemplat
     setBusy("publish");
     setMessage(null);
     try {
-      if (!(await autosave.flush())) {
-        setMessage({ kind: "error", text: "This post has unsaved changes with errors. Fix them, then try again." });
-        return;
-      }
       if (published) {
         const result = await unpublishPost(post.id);
         if (!result.ok) return setMessage({ kind: "error", text: result.error });
         setStatus("draft");
         setMessage({ kind: "ok", text: "Moved back to drafts. It is no longer on your site." });
+        await autosave.flush(); // edits that never went live are kept in the draft
       } else {
+        if (!(await autosave.flush())) {
+          setMessage({ kind: "error", text: "This post has unsaved changes with errors. Fix them, then try again." });
+          return;
+        }
         const result = await publishPost(post.id);
         if (!result.ok) return setMessage({ kind: "error", text: result.error });
         setStatus("published");
@@ -111,6 +124,14 @@ export function PostEditor({ post, activeTemplate }: { post: Post; activeTemplat
     } finally {
       setBusy(null);
     }
+  }
+
+  /** Published posts only: saves the edits on screen, which puts them on the site. */
+  async function updateLive() {
+    setBusy("update");
+    setMessage(null);
+    if (await autosave.flush()) setMessage({ kind: "ok", text: "Updated. Your changes are live on your site." });
+    setBusy(null);
   }
 
   async function uploadCover(file: File | undefined) {
@@ -176,7 +197,18 @@ export function PostEditor({ post, activeTemplate }: { post: Post; activeTemplat
           </div>
           {autosave.status === "error" && autosave.error ? <p className="text-sm text-red-700">{autosave.error}</p> : null}
           {published && publishedAt ? <p className="text-sm text-stone-600">Published {formatDate(publishedAt)}</p> : null}
+          {previewOff ? (
+            <p id="update-hint" className="text-sm text-pretty text-stone-600">
+              Your edits are not on your site yet. Click Update post to publish them. Preview works again after that.
+            </p>
+          ) : null}
           <div className="grid gap-2 max-lg:grid-cols-2">
+            {published ? (
+              <button type="button" className={`${buttonPrimary} max-lg:col-span-2`} onClick={updateLive} disabled={busy !== null || !hasEdits}>
+                {busy === "update" ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" /> : null}
+                Update post
+              </button>
+            ) : null}
             <button
               type="button"
               className={published ? buttonSecondary : buttonPrimary}
@@ -186,10 +218,17 @@ export function PostEditor({ post, activeTemplate }: { post: Post; activeTemplat
               {busy === "publish" ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" /> : null}
               {published ? "Unpublish" : "Publish"}
             </button>
-            <a href={previewHref} target="_blank" rel="noreferrer" onClick={openPreview} className={buttonSecondary}>
-              <Eye aria-hidden="true" className="size-4" />
-              Preview<span className="sr-only"> in the live template (opens in a new tab)</span>
-            </a>
+            {previewOff ? (
+              <button type="button" disabled aria-describedby="update-hint" className={buttonSecondary}>
+                <Eye aria-hidden="true" className="size-4" />
+                Preview
+              </button>
+            ) : (
+              <a href={previewHref} target="_blank" rel="noreferrer" onClick={openPreview} className={buttonSecondary}>
+                <Eye aria-hidden="true" className="size-4" />
+                Preview<span className="sr-only"> in the live template (opens in a new tab)</span>
+              </a>
+            )}
             {published ? (
               <a href={`/blog/${slug}`} target="_blank" rel="noreferrer" className={`${buttonGhost} max-lg:col-span-2`}>
                 <SquareArrowOutUpRight aria-hidden="true" className="size-4" />
@@ -250,7 +289,9 @@ export function PostEditor({ post, activeTemplate }: { post: Post; activeTemplat
               hint={
                 <>
                   /blog/{slug || "…"}
-                  {!published && !slugLinked ? (
+                  {published ? (
+                    " · Unpublish to change the web address."
+                  ) : !slugLinked ? (
                     <>
                       {" · "}
                       <button
@@ -259,7 +300,7 @@ export function PostEditor({ post, activeTemplate }: { post: Post; activeTemplat
                         onClick={() => {
                           setSlug(slugify(title));
                           setSlugLinked(true);
-                          autosave.markDirty();
+                          edited();
                         }}
                       >
                         Match the title
@@ -275,11 +316,12 @@ export function PostEditor({ post, activeTemplate }: { post: Post; activeTemplat
                 maxLength={120}
                 autoCapitalize="none"
                 spellCheck={false}
+                disabled={published}
                 value={slug}
                 onChange={(e) => {
                   setSlug(e.target.value);
                   setSlugLinked(false);
-                  autosave.markDirty();
+                  edited();
                 }}
                 className={textInput}
               />
@@ -298,7 +340,7 @@ export function PostEditor({ post, activeTemplate }: { post: Post; activeTemplat
                 value={excerpt}
                 onChange={(e) => {
                   setExcerpt(e.target.value);
-                  autosave.markDirty();
+                  edited();
                 }}
                 className={`${textarea} min-h-24`}
               />
@@ -348,7 +390,7 @@ export function PostEditor({ post, activeTemplate }: { post: Post; activeTemplat
             <p role="status" aria-live="polite" className="text-sm text-red-700 empty:hidden">
               {coverError}
             </p>
-            <p className="text-sm text-stone-500">Saves right away. PNG, JPG or WebP up to 5 MB.</p>
+            <p className="text-sm text-stone-500">Saves right away. PNG, JPG or WebP up to 4 MB.</p>
           </section>
 
           <button

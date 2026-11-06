@@ -14,7 +14,19 @@ import { removeImage, uploadImage } from "../upload";
 
 const NOT_ADMIN = "You need to be signed in as an admin.";
 const NOT_FOUND = "Post not found.";
+const SLUG_LOCKED = "Unpublish to change the web address.";
+const DEFAULT_TITLE = "Untitled post";
 const Id = z.uuid();
+
+/** Why a post cannot be live yet, or null. Checked on publish and on every save to a published post. */
+function publishProblem(title: string, html: string): { field: "title" | "contentHtml"; message: string } | null {
+  const t = title.trim();
+  if (!t || t.toLowerCase() === DEFAULT_TITLE.toLowerCase())
+    return { field: "title", message: "Add a title. Posts on your site cannot be untitled." };
+  const text = html.replace(/<[^>]*>/g, "").replace(/&nbsp;|&#160;/g, "").trim();
+  if (!text && !/<img\s/i.test(html)) return { field: "contentHtml", message: "Add some content. Posts on your site cannot be empty." };
+  return null;
+}
 
 async function admin(): Promise<AdminUser | null> {
   try {
@@ -44,7 +56,7 @@ export async function createPost(): Promise<ActionResult<{ id: string; slug: str
     const slug = await freeSlug(supabase, "untitled-post");
     const { data, error } = await supabase
       .from("posts")
-      .insert({ title: "Untitled post", slug, status: "draft", author_id: user.id })
+      .insert({ title: DEFAULT_TITLE, slug, status: "draft", author_id: user.id })
       .select("id, slug")
       .single();
     if (error) return fail("Could not create the post. Please try again.");
@@ -72,7 +84,11 @@ const SavePostInput = z.object({
 });
 export type SavePostInput = z.input<typeof SavePostInput>;
 
-/** Saves every field (also used by autosave). The HTML is sanitized here, never trusted from the browser. */
+/**
+ * Saves every field. The HTML is sanitized here, never trusted from the browser.
+ * Drafts autosave through this; a published post only saves on "Update post", goes live at once,
+ * keeps its slug and must stay publishable.
+ */
 export async function savePost(input: SavePostInput): Promise<ActionResult<{ updatedAt: string }>> {
   if (!(await admin())) return fail(NOT_ADMIN);
   const parsed = SavePostInput.safeParse(input);
@@ -89,18 +105,27 @@ export async function savePost(input: SavePostInput): Promise<ActionResult<{ upd
   const slugTaken = (suggestion: string) =>
     fail(`The slug "${slug}" is already used by another post.`, { slug: `Already used. Try "${suggestion}".` });
   try {
+    const { data: current, error: readError } = await supabase.from("posts").select("status, slug").eq("id", id).maybeSingle();
+    if (readError) return fail("Could not save the post. Please try again.");
+    if (!current) return fail(NOT_FOUND);
+    if (current.status === "published") {
+      if (current.slug !== slug) return fail(SLUG_LOCKED, { slug: SLUG_LOCKED });
+      const problem = publishProblem(title, contentHtml);
+      if (problem) return fail(problem.message, { [problem.field]: problem.message });
+    }
     const free = await freeSlug(supabase, slug, id);
     if (free !== slug) return slugTaken(free);
     const { data, error } = await supabase
       .from("posts")
       .update({ title, slug, excerpt, content_json: contentJson, content_html: contentHtml })
       .eq("id", id)
+      .eq("status", current.status) // published in between: no match, so the rules above are re-checked on retry
       .select("status, updated_at")
       .maybeSingle();
     if (error?.code === "23505") return slugTaken(await freeSlug(supabase, slug, id));
     if (error) return fail("Could not save the post. Please try again.");
     if (!data) return fail(NOT_FOUND);
-    // Draft autosaves do not change the public site, so they skip the cache refresh.
+    // Draft saves do not change the public site, so they skip the cache refresh.
     if (data.status === "published") updateTag(CMS_TAG);
     return ok({ updatedAt: data.updated_at as string });
   } catch {
@@ -110,14 +135,16 @@ export async function savePost(input: SavePostInput): Promise<ActionResult<{ upd
 
 /* ---------- publish ---------- */
 
-/** Publishes the post; published_at is set to now only the first time. */
+/** Publishes the post (needs a real title and some content); published_at is set to now only the first time. */
 export async function publishPost(id: string): Promise<ActionResult<{ publishedAt: string }>> {
   if (!(await admin())) return fail(NOT_ADMIN);
   if (!Id.safeParse(id).success) return fail(NOT_FOUND);
   const supabase = await createClient();
-  const { data: row, error } = await supabase.from("posts").select("published_at").eq("id", id).maybeSingle();
+  const { data: row, error } = await supabase.from("posts").select("published_at, title, content_html").eq("id", id).maybeSingle();
   if (error) return fail("Could not publish the post. Please try again.");
   if (!row) return fail(NOT_FOUND);
+  const problem = publishProblem(String(row.title ?? ""), String(row.content_html ?? ""));
+  if (problem) return fail(problem.message, { [problem.field]: problem.message });
   const publishedAt = (row.published_at as string | null) ?? new Date().toISOString();
   const { error: updateError } = await supabase
     .from("posts")

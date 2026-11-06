@@ -22,16 +22,16 @@ Read this before touching code. `docs/PLAN.md` says **what** to build; this file
 | Area | Owner |
 |---|---|
 | `lib/supabase/*`, `lib/cms/{types,read,media,upload,action-result,editor-fonts}.ts`, `lib/auth/require-admin.ts`, `app/layout.tsx`, `app/fonts.ts`, `next.config.ts`, `package.json` | orchestrator (ask, don't edit) |
-| `proxy.ts`, `app/admin/login/**`, `lib/auth/actions.ts`, `scripts/admin-create.mjs`, `lib/cms/admin-read.ts`, `lib/cms/actions/{site,slides,template}.ts`, `lib/cms/schemas.ts`, `supabase/migrations/**` | backend agent (steps 3, 4) |
+| `proxy.ts`, `lib/auth/actions.ts`, `scripts/admin-create.mjs`, `lib/cms/admin-read.ts`, `lib/cms/actions/{site,slides,template}.ts`, `lib/cms/schemas.ts`, `supabase/migrations/**` | backend agent (steps 3, 4) |
 | `components/editor/**`, `lib/cms/sanitize.ts`, `lib/cms/actions/posts.ts`, `lib/cms/admin-posts.ts` | editor agent (step 5) |
 | `lib/templates/**`, `lib/cms/fixtures.ts`, `app/(site)/**`, `app/preview/**`, `app/dev/**`, first plain version of `templates/*/**` | template-system agent (step 6) |
 | `templates/meridian/**`, `templates/folio/**`, `templates/onyx/**` (after step 6) | one design agent per template (steps 7 to 10) |
-| `app/admin/**` except `login`, `components/admin/**` | admin design agent (steps 11 to 13) |
+| `app/admin/**` (login included), `components/admin/**` | admin design agent (steps 11 to 13) |
 | `tests/unit/**` | whoever owns the code under test (name files after your area) |
 
 ## Data
 
-Types: `lib/cms/types.ts`. Public reads: `lib/cms/read.ts` (`getSite`, `getActiveSlides`, `getLatestPosts`, `getPublishedPosts(page, perPage)`, `getPublishedPost(slug)`, `getSiteData`). Image URLs: `mediaUrl(path)` in `lib/cms/media.ts` (bucket `cms-media`, public). Uploads: `uploadImage(supabase, file, folder)` / `removeImage` in `lib/cms/upload.ts` (checks real file bytes, PNG/JPG/WebP, 5 MB, random names; `seed/` files are never deleted). Action results: `ActionResult` in `lib/cms/action-result.ts`.
+Types: `lib/cms/types.ts`. Public reads: `lib/cms/read.ts` (`getSite`, `getActiveSlides`, `getLatestPosts`, `getPublishedPosts(page, perPage)`, `getPublishedPost(slug)`, `getSiteData`). Image URLs: `mediaUrl(path)` in `lib/cms/media.ts` (bucket `cms-media`, public). Uploads: `uploadImage(supabase, file, folder)` / `removeImage` in `lib/cms/upload.ts` (checks real file bytes, PNG/JPG/WebP, 4 MB, random names; `seed/` files are never deleted). Action results: `ActionResult` in `lib/cms/action-result.ts`.
 
 Admin auth: `lib/auth/require-admin.ts`:
 - `requireAdmin()` for pages (redirects to `/admin/login`).
@@ -58,4 +58,4 @@ Rendered inside `<div className="cms-content">`. Templates style these descendan
 - Inline: `strong`, `em`, `u`, `s`, `a[href]` (http, https, mailto only; opens normally), `mark` (highlight; may carry `style="background-color: #hex"`), `span` with `style` limited to `font-family`, `font-size`, `color`.
 - `font-family` values come from `EDITOR_FONTS` in `lib/cms/editor-fonts.ts` (CSS variables defined on `<html>` by `app/fonts.ts`). `font-size` values come from `EDITOR_FONT_SIZES`. `color` is a hex value.
 - Blocks may carry `style="text-align: left|center|right|justify"`.
-- `img` has `src` (cms-media URL), `alt`, and `data-size="small|medium|full"`. Small is about a third of the text column, medium about two thirds, full is the whole column. Centered.
+- `img` has `src` (cms-media URL), `alt`, `width` and `height` (the image's natural pixel size, whole numbers from 1 to 10000; older images may have neither), and `data-size="small|medium|full"`. Small is about a third of the text column, medium about two thirds, full is the whole column. Centered. Templates keep `height: auto` so the attributes reserve the image's space before it loads.

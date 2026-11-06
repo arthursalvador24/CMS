@@ -3,7 +3,7 @@
  * Carousel slide actions (admin only). Each re-checks admin, validates, saves, refreshes the public site.
  *
  *   createSlide(formData: FormData): Promise<ActionResult<Slide>>
- *       fields: image (required: PNG, JPG or WebP, 5 MB max), heading, caption, ctaLabel, ctaUrl. Added last, visible.
+ *       fields: image (required: PNG, JPG or WebP, 4 MB max), heading, caption, ctaLabel, ctaUrl. Added last, visible.
  *   updateSlide(formData: FormData): Promise<ActionResult<Slide>>
  *       fields: id, heading, caption, ctaLabel, ctaUrl, image (optional; replaces the old image, which is deleted)
  *   reorderSlides(ids: string[]): Promise<ActionResult>          every slide id (hidden ones too), in the new order

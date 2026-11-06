@@ -79,3 +79,103 @@ describe("savePost validation", () => {
     expect(mocks.createClient).not.toHaveBeenCalled();
   });
 });
+
+/** Supabase stand-in: every query call chains, and each awaited query or maybeSingle() takes the next result. */
+function fakeDb(...results: { data?: unknown; error?: unknown }[]) {
+  const calls: string[] = [];
+  const next = () => ({ data: null, error: null, ...results.shift() });
+  const query: object = new Proxy(
+    {},
+    {
+      get: (_, prop) =>
+        prop === "then"
+          ? (resolve: (v: unknown) => void) => resolve(next())
+          : prop === "maybeSingle"
+            ? async () => next()
+            : (...args: unknown[]) => {
+                calls.push(`${String(prop)}(${args.map((a) => JSON.stringify(a)).join(", ")})`);
+                return query;
+              },
+    },
+  );
+  mocks.createClient.mockResolvedValue({ from: () => query });
+  return calls;
+}
+
+const save = (patch: Partial<posts.SavePostInput> = {}) =>
+  posts.savePost({ id: ID, title: "Spring menu", slug: "spring-menu", excerpt: "", contentJson: null, contentHtml: "<p>Hello</p>", ...patch });
+
+describe("savePost on a published post", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.assertAdmin.mockResolvedValue({ id: ID, email: "a@example.com" });
+  });
+
+  it("refuses a slug change, so the public web address stays put", async () => {
+    const calls = fakeDb({ data: { status: "published", slug: "spring-menu" } });
+    const result = await save({ slug: "new-address" });
+    expect(result).toMatchObject({ ok: false, fieldErrors: { slug: "Unpublish to change the web address." } });
+    expect(calls.some((c) => c.startsWith("update"))).toBe(false);
+    expect(mocks.updateTag).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["title", { title: "Untitled post" }],
+    ["contentHtml", { contentHtml: "<p> </p>" }],
+  ])("refuses to put an empty %s live", async (field, patch) => {
+    const calls = fakeDb({ data: { status: "published", slug: "spring-menu" } });
+    const result = await save(patch);
+    expect(result).toMatchObject({ ok: false, fieldErrors: { [field]: expect.any(String) } });
+    expect(calls.some((c) => c.startsWith("update"))).toBe(false);
+  });
+
+  it("saves edits with the same slug and refreshes the public site", async () => {
+    const calls = fakeDb(
+      { data: { status: "published", slug: "spring-menu" } },
+      { data: [] },
+      { data: { status: "published", updated_at: "2026-11-06T00:00:00Z" } },
+    );
+    expect((await save()).ok).toBe(true);
+    expect(calls).toContain('eq("status", "published")');
+    expect(mocks.updateTag).toHaveBeenCalledOnce();
+  });
+
+  it("still lets a draft change its slug, without a public refresh", async () => {
+    fakeDb(
+      { data: { status: "draft", slug: "untitled-post" } },
+      { data: [] },
+      { data: { status: "draft", updated_at: "2026-11-06T00:00:00Z" } },
+    );
+    expect((await save({ slug: "new-address" })).ok).toBe(true);
+    expect(mocks.updateTag).not.toHaveBeenCalled();
+  });
+});
+
+describe("publishPost needs a real title and some content", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.assertAdmin.mockResolvedValue({ id: ID, email: "a@example.com" });
+  });
+
+  it.each([
+    ["the default title", "Untitled post", "<p>Hello</p>", "title"],
+    ["a blank title", "   ", "<p>Hello</p>", "title"],
+    ["an empty body", "Spring menu", "", "contentHtml"],
+    ["empty paragraphs", "Spring menu", "<p></p><p>&nbsp; </p>", "contentHtml"],
+  ])("refuses %s", async (_case, title, html, field) => {
+    const calls = fakeDb({ data: { published_at: null, title, content_html: html } });
+    const result = await posts.publishPost(ID);
+    expect(result).toMatchObject({ ok: false, error: expect.stringMatching(/cannot be (untitled|empty)/), fieldErrors: { [field]: expect.any(String) } });
+    expect(calls.some((c) => c.startsWith("update"))).toBe(false);
+    expect(mocks.updateTag).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["text", "<p>Hello</p>"],
+    ["only an image", '<p><img src="https://example.supabase.co/x.png" alt=""></p>'],
+  ])("publishes a post with %s", async (_case, html) => {
+    fakeDb({ data: { published_at: null, title: "Spring menu", content_html: html } }, { error: null });
+    expect((await posts.publishPost(ID)).ok).toBe(true);
+    expect(mocks.updateTag).toHaveBeenCalledOnce();
+  });
+});

@@ -164,7 +164,7 @@ export function SlideDialog({
             </div>
             {errors.image ? <p className={fieldError}>{errors.image}</p> : null}
             <p id="image-hint" className="text-sm text-stone-500">
-              Wide photos work best, at least 1600 px across. PNG, JPG or WebP up to 5 MB.
+              Wide photos work best, at least 1600 px across. PNG, JPG or WebP up to 4 MB.
             </p>
           </div>
 

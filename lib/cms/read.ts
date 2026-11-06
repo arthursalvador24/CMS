@@ -1,6 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { createPublicClient } from "@/lib/supabase/public";
 import { mediaUrl } from "./media";
+import { sanitizePostHtml } from "./sanitize";
 import {
   isTemplateKey,
   type Post,
@@ -111,7 +112,8 @@ export function mapPost(row: PostRow): Post {
   return {
     ...mapPostSummary(row),
     status: (row.status === "published" ? "published" : "draft") as PostStatus,
-    contentHtml: row.content_html ?? "",
+    // Sanitized on save and again here, so rows written outside the app can't inject markup.
+    contentHtml: sanitizePostHtml(row.content_html ?? ""),
     contentJson: row.content_json ?? null,
     createdAt: row.created_at ?? "",
     updatedAt: row.updated_at ?? "",

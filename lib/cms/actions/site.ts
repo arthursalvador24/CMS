@@ -4,7 +4,7 @@
  *
  *   updateCompanyDetails(input: CompanyDetailsInput): Promise<ActionResult<SiteSettings>>
  *       { companyName, tagline, email, phone, address, socials: { facebook?, instagram?, ... } }
- *   uploadLogo(formData: FormData): Promise<ActionResult<SiteSettings>>      field "logo": PNG, JPG or WebP, 5 MB max
+ *   uploadLogo(formData: FormData): Promise<ActionResult<SiteSettings>>      field "logo": PNG, JPG or WebP, 4 MB max
  *   removeLogo(): Promise<ActionResult<SiteSettings>>
  *   updateAboutMissionVision(input: AboutInput): Promise<ActionResult<SiteSettings>>   { about, mission, vision }
  *

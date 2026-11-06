@@ -38,7 +38,7 @@ Landing page sections (all templates): header with logo, company name and nav; h
 - `carousel_slides`: id, image_path, heading, caption, cta_label, cta_url, sort_order, is_active, timestamps
 - `posts`: id, title, slug (unique), excerpt, cover_image_path, content_json (Tiptap JSON), content_html (sanitized on save), status (`draft` | `published`), published_at, author_id, timestamps
 - `admins`: user_id (references auth.users)
-- Storage bucket `cms-media`: public read; upload and delete for admins only; PNG, JPG, WebP up to 5 MB (no SVG, since SVG files can carry scripts)
+- Storage bucket `cms-media`: public read; upload and delete for admins only; PNG, JPG, WebP up to 4 MB (no SVG, since SVG files can carry scripts)
 - Row-level security on every table: anyone can read site settings, active slides and published posts; only admins can write. An `is_admin()` security-definer helper backs the policies.
 
 ## Rules for every step
@@ -61,7 +61,7 @@ Acceptance: `npm run dev` serves a placeholder page on port 3220; `npx tsc --noE
 
 ## Step 2: Database schema, storage and security on CMSDB
 
-Create migrations in `supabase/migrations/` and apply them to CMSDB: the four tables, `is_admin()`, row-level security policies, the `cms-media` bucket with its policies (PNG, JPG, WebP, 5 MB), an `updated_at` trigger, and seed data (one site_settings row with Kestrel & Vale content, 3 carousel slides, 3 published posts, 1 draft).
+Create migrations in `supabase/migrations/` and apply them to CMSDB: the four tables, `is_admin()`, row-level security policies, the `cms-media` bucket with its policies (PNG, JPG, WebP, 4 MB), an `updated_at` trigger, and seed data (one site_settings row with Kestrel & Vale content, 3 carousel slides, 3 published posts, 1 draft).
 
 Acceptance: the public key can read settings, active slides and published posts, but cannot read drafts or write anything; an admin can write every table and upload to cms-media; Supabase security advisors show no errors.
 
@@ -77,7 +77,7 @@ Out of scope: password reset email, social login, 2FA.
 
 ## Step 4: Content data layer and saving
 
-Add `lib/cms/`: typed reads (site, active slides, published posts, post by slug, plus admin reads that include drafts) and zod-validated server actions that re-check admin on the server, for company details, logo, about, mission, vision, carousel slides (create, edit, reorder, show/hide, delete) and the active template. Add an image upload helper for cms-media (PNG, JPG, WebP, 5 MB, random file names, old file removed on replace). Public pages refresh after each save.
+Add `lib/cms/`: typed reads (site, active slides, published posts, post by slug, plus admin reads that include drafts) and zod-validated server actions that re-check admin on the server, for company details, logo, about, mission, vision, carousel slides (create, edit, reorder, show/hide, delete) and the active template. Add an image upload helper for cms-media (PNG, JPG, WebP, 4 MB, random file names, old file removed on replace). Public pages refresh after each save.
 
 Acceptance: unit tests cover validation and the admin re-check; a save shows on the public site on the next load; non-admin calls to any action fail.
 

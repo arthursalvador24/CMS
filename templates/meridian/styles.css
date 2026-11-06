@@ -299,16 +299,18 @@
 }
 
 /* Images: small about a third of the column, medium two thirds, full the whole column; centered.
-   shortcut: saved HTML has no width/height, so space is reserved at 3:2 until an image loads; other
-   ratios still shift once. Drop the aspect-ratio once the editor saves width/height on img. */
+   The width/height attributes give the box its ratio before load (height: auto keeps it). */
 .tpl-meridian .cms-content img {
   display: block;
   width: 100%;
   max-width: 100%;
   height: auto;
-  aspect-ratio: auto 3 / 2;
   margin-inline: auto;
   background: #f1f5f9;
+}
+/* Older images saved without a size: reserve 3:2 until they load. */
+.tpl-meridian .cms-content img:not([width][height]) {
+  aspect-ratio: auto 3 / 2;
 }
 .tpl-meridian .cms-content > img {
   margin-block: 2rem;

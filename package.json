@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "shot": "node --env-file=.env.local scripts/shot.mjs",
     "seed:media": "node --env-file=.env.local scripts/seed-media.mjs",
     "admin:create": "node --env-file=.env.local scripts/admin-create.mjs"

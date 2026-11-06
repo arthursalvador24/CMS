@@ -153,9 +153,9 @@ const FEATURES_HTML = [
   `<hr>`,
   `<h2>Images</h2>`,
   `<p>Small, medium and full width:</p>`,
-  `<img src="${img("post-2.jpg")}" alt="A bedroom with two potted plants beside the bed" data-size="small">`,
-  `<img src="${img("post-3.jpg")}" alt="A kitchen island with stools on one side" data-size="medium">`,
-  `<img src="${img("slide-2.jpg")}" alt="An open-plan living room with a reading corner" data-size="full">`,
+  `<img src="${img("post-2.jpg")}" alt="A bedroom with two potted plants beside the bed" width="2400" height="2400" data-size="small">`,
+  `<img src="${img("post-3.jpg")}" alt="A kitchen island with stools on one side" width="2400" height="1590" data-size="medium">`,
+  `<img src="${img("slide-2.jpg")}" alt="An open-plan living room with a reading corner" width="2400" height="1632" data-size="full">`,
   `<p>The last paragraph, after the images.</p>`,
 ].join("");
 

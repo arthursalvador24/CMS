@@ -212,14 +212,17 @@
   border: 0;
   border-top: 3px solid #0c0a09;
 }
-/* shortcut: editor images carry no width/height, so the browser cannot reserve their height before load;
-   once the editor saves width and height attributes, height:auto below keeps the space with no CSS change. */
+/* The width/height attributes give each image its ratio before load (height: auto keeps it). */
 .tpl-onyx .cms-content img {
   display: block;
   margin: 2em auto;
   max-width: 100%;
   height: auto;
   background: #e7e5e4;
+}
+/* Older images saved without a size: reserve 3:2 until they load. */
+.tpl-onyx .cms-content img:not([width][height]) {
+  aspect-ratio: auto 3 / 2;
 }
 .tpl-onyx .cms-content img[data-size="small"] {
   width: 33%;
