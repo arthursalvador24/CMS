@@ -1,9 +1,10 @@
-import { ArrowRight, Mail, Phone } from "lucide-react";
+import { ArrowRight, Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
-import type { SiteData, TemplateProps } from "@/lib/cms/types";
+import type { ReactNode } from "react";
+import type { SiteData, SiteSettings, TemplateProps } from "@/lib/cms/types";
 import { href, paragraphs, telHref } from "@/lib/templates/utils";
-import { Carousel } from "./Carousel";
 import { Frame } from "./Frame";
+import { Panorama } from "./Panorama";
 import { PostCard } from "./PostCard";
 
 const sectionTitle = "text-[clamp(1.875rem,1.4rem+1.4vw,2.75rem)] leading-[1.1] font-semibold tracking-[-0.025em]";
@@ -24,7 +25,7 @@ export function Home({ data, basePath }: TemplateProps<SiteData>) {
       {slides.length > 0 ? (
         <>
           {site.companyName && <h1 className="sr-only">{site.companyName}</h1>}
-          <Carousel slides={slides} basePath={basePath} />
+          <Panorama slides={slides} basePath={basePath} />
         </>
       ) : (
         (site.companyName || site.tagline) && (
@@ -54,6 +55,8 @@ export function Home({ data, basePath }: TemplateProps<SiteData>) {
           </section>
         )
       )}
+
+      {hasContact && <KeyFacts site={site} />}
 
       {about.length > 0 && (
         <section id="about" aria-labelledby="about-title" className="m-wrap scroll-mt-4 py-20 md:scroll-mt-24 md:py-28">
@@ -126,62 +129,99 @@ export function Home({ data, basePath }: TemplateProps<SiteData>) {
       )}
 
       {hasContact && (
-        <section id="contact" aria-labelledby="contact-title" className="m-on-accent scroll-mt-4 bg-blue-800 text-white md:scroll-mt-24">
-          <div className="m-wrap grid gap-x-10 gap-y-12 py-20 *:min-w-0 md:grid-cols-12 md:py-28">
-            <div className="md:col-span-5">
+        <section id="contact" aria-labelledby="contact-title" className="scroll-mt-4 border-t border-slate-200 bg-slate-50 md:scroll-mt-24">
+          <div className="m-wrap grid gap-x-10 gap-y-10 py-20 *:min-w-0 md:grid-cols-12 md:items-end md:py-28">
+            <div className="md:col-span-7">
               <h2 id="contact-title" className="text-[clamp(2.25rem,1.6rem+2.4vw,3.75rem)] leading-[1.02] font-semibold tracking-[-0.035em]">
                 Get in touch
               </h2>
-              {(site.email || site.phone) && (
-                <div className="mt-10 flex flex-wrap gap-3">
-                  {site.email && (
-                    <a href={`mailto:${site.email}`} className="m-focus m-btn m-btn-light min-h-12 px-5 py-3">
-                      <Mail aria-hidden size={18} />
-                      Email us
-                    </a>
-                  )}
-                  {site.phone && (
-                    <a href={telHref(site.phone)} className="m-focus m-btn m-btn-ghost min-h-12 px-5 py-3">
-                      <Phone aria-hidden size={18} />
-                      Call us
-                    </a>
-                  )}
-                </div>
+              {site.address && (
+                <p className="mt-6 flex max-w-xl gap-3 text-lg leading-relaxed text-pretty break-words text-slate-600">
+                  <MapPin aria-hidden size={20} className="mt-1 shrink-0 text-blue-800" />
+                  {site.address}
+                </p>
               )}
             </div>
-            <address className="not-italic md:col-span-7">
-              <dl className="divide-y divide-white/20 border-y border-white/20">
+            {(site.email || site.phone) && (
+              <div className="flex flex-wrap gap-3 md:col-span-5 md:justify-end">
                 {site.email && (
-                  <div className="grid gap-1 py-6 sm:grid-cols-[7rem_1fr] sm:gap-6">
-                    <dt className="m-label pt-1 text-blue-200">Email</dt>
-                    <dd className="text-lg wrap-anywhere md:text-xl">
-                      <a href={`mailto:${site.email}`} className="m-focus underline decoration-white/40 underline-offset-4 hover:decoration-white">
-                        {site.email}
-                      </a>
-                    </dd>
-                  </div>
+                  <a href={`mailto:${site.email}`} className="m-focus m-btn m-btn-primary min-h-12 max-w-full px-5 py-3">
+                    <Mail aria-hidden size={18} className="shrink-0" />
+                    <span className="wrap-anywhere">Email us</span>
+                  </a>
                 )}
                 {site.phone && (
-                  <div className="grid gap-1 py-6 sm:grid-cols-[7rem_1fr] sm:gap-6">
-                    <dt className="m-label pt-1 text-blue-200">Phone</dt>
-                    <dd className="text-lg break-words tabular-nums md:text-xl">
-                      <a href={telHref(site.phone)} className="m-focus underline decoration-white/40 underline-offset-4 hover:decoration-white">
-                        {site.phone}
-                      </a>
-                    </dd>
-                  </div>
+                  <a href={telHref(site.phone)} className="m-focus m-btn m-btn-outline min-h-12 px-5 py-3">
+                    <Phone aria-hidden size={18} className="shrink-0" />
+                    Call {site.phone}
+                  </a>
                 )}
-                {site.address && (
-                  <div className="grid gap-1 py-6 sm:grid-cols-[7rem_1fr] sm:gap-6">
-                    <dt className="m-label pt-1 text-blue-200">Address</dt>
-                    <dd className="text-lg leading-relaxed break-words md:text-xl">{site.address}</dd>
-                  </div>
-                )}
-              </dl>
-            </address>
+              </div>
+            )}
           </div>
         </section>
       )}
     </Frame>
+  );
+}
+
+/** The company's contact details right under the hero, so the next step is in the first screen. */
+function KeyFacts({ site }: { site: SiteSettings }) {
+  const facts: { key: string; label: string; icon: ReactNode; value: ReactNode }[] = [];
+  if (site.email) {
+    facts.push({
+      key: "email",
+      label: "Email",
+      icon: <Mail aria-hidden size={15} />,
+      value: (
+        <a href={`mailto:${site.email}`} className="m-focus hover:text-blue-800">
+          {site.email}
+        </a>
+      ),
+    });
+  }
+  if (site.phone) {
+    facts.push({
+      key: "phone",
+      label: "Phone",
+      icon: <Phone aria-hidden size={15} />,
+      value: (
+        <a href={telHref(site.phone)} className="m-focus tabular-nums hover:text-blue-800">
+          {site.phone}
+        </a>
+      ),
+    });
+  }
+  if (site.address) {
+    facts.push({ key: "address", label: "Address", icon: <MapPin aria-hidden size={15} />, value: site.address });
+  }
+  const action = site.email
+    ? { to: `mailto:${site.email}`, label: "Email us", icon: <Mail aria-hidden size={18} /> }
+    : site.phone
+      ? { to: telHref(site.phone), label: "Call us", icon: <Phone aria-hidden size={18} /> }
+      : null;
+
+  return (
+    <section aria-label="Contact details" className="border-b border-slate-200 bg-white">
+      <div className="m-wrap flex flex-col gap-y-6 py-7 lg:flex-row lg:items-center lg:gap-x-10 lg:py-0">
+        <dl className="grid flex-1 gap-x-8 gap-y-5 *:min-w-0 sm:grid-cols-2 lg:flex lg:gap-0 lg:divide-x lg:divide-slate-200">
+          {facts.map((fact) => (
+            <div key={fact.key} className={`lg:py-7 lg:pr-8 lg:not-first:pl-8 ${fact.key === "address" ? "sm:col-span-2 lg:flex-[1.4]" : "lg:flex-1"}`}>
+              <dt className="m-label flex items-center gap-2 text-slate-500">
+                <span className="text-blue-800">{fact.icon}</span>
+                {fact.label}
+              </dt>
+              <dd className="mt-2 text-[17px] leading-snug font-medium text-pretty wrap-anywhere text-slate-900">{fact.value}</dd>
+            </div>
+          ))}
+        </dl>
+        {action && (
+          <a href={action.to} className="m-focus m-btn m-btn-primary min-h-12 shrink-0 justify-center self-start px-5 py-3 lg:self-auto">
+            {action.icon}
+            {action.label}
+          </a>
+        )}
+      </div>
+    </section>
   );
 }
