@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { LockKeyhole } from "lucide-react";
+import { Suspense } from "react";
+import { Brand, BrandText } from "@/components/admin/Brand";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = {
@@ -9,13 +10,15 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <main className="grid min-h-dvh place-items-center bg-stone-100 px-4 py-12 font-[family-name:var(--font-ed-inter)] text-stone-900">
+    <main className="grid min-h-dvh place-items-center bg-stone-50 px-4 py-12 font-[family-name:var(--font-ed-inter)] text-stone-900">
       <div className="w-full max-w-[400px]">
         <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="mb-7">
-            <span className="mb-5 grid size-10 place-items-center rounded-xl bg-stone-900 text-white">
-              <LockKeyhole aria-hidden="true" className="size-5" />
-            </span>
+            <div className="mb-6">
+              <Suspense fallback={<BrandText name="Website admin" />}>
+                <Brand />
+              </Suspense>
+            </div>
             <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
             <p className="mt-1.5 text-sm text-stone-600">Use your admin email and password to manage the website.</p>
           </div>

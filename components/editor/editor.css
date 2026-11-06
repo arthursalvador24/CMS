@@ -6,15 +6,17 @@
  */
 
 .rte {
+  /* Admin palette (stone neutrals, as in components/admin/ui.ts). */
   --rte-bg: #ffffff;
-  --rte-fg: #1f2328;
-  --rte-muted: #59636e;
-  --rte-border: #d1d9e0;
-  --rte-hover: #f2f4f6;
-  --rte-active: #e3e8ee;
-  --rte-accent: #0b63ce;
-  --rte-danger: #b42318;
-  --rte-radius: 8px;
+  --rte-fg: #1c1917;
+  --rte-muted: #57534e;
+  --rte-border: #e7e5e4;
+  --rte-hover: #f5f5f4;
+  --rte-active: #e7e5e4;
+  --rte-accent: #1c1917;
+  --rte-danger: #b91c1c;
+  --rte-radius: 16px;
+  box-shadow: 0 1px 2px rgb(28 25 23 / 0.05);
   min-width: 0; /* lets the phone toolbar scroll instead of widening a grid or flex parent */
   border: 1px solid var(--rte-border);
   border-radius: var(--rte-radius);
@@ -70,17 +72,27 @@
     flex: none;
     flex-wrap: nowrap;
   }
+  .rte-btn,
+  .rte-select,
+  .rte-color {
+    min-width: 40px;
+    height: 40px;
+  }
+  .rte-content {
+    min-height: 320px;
+    padding: 16px 16px 24px;
+  }
 }
 
 .rte-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 34px;
-  height: 34px;
+  min-width: 36px;
+  height: 36px;
   padding: 0 6px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--rte-fg);
   cursor: pointer;
@@ -91,6 +103,7 @@
 .rte-btn[aria-pressed="true"] {
   background: var(--rte-active);
   color: var(--rte-accent);
+  box-shadow: inset 0 0 0 1px #d6d3d1;
 }
 .rte-btn:disabled {
   opacity: 0.4;
@@ -102,15 +115,15 @@
 .rte-color:focus-within,
 .rte-field input:focus-visible {
   outline: 2px solid var(--rte-accent);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 .rte-select {
-  height: 34px;
+  height: 36px;
   max-width: 9.5rem;
   padding: 0 6px;
-  border: 1px solid var(--rte-border);
-  border-radius: 6px;
+  border: 1px solid #d6d3d1;
+  border-radius: 8px;
   background: var(--rte-bg);
   color: var(--rte-fg);
   font: inherit;
@@ -121,9 +134,9 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  height: 34px;
+  height: 36px;
   padding: 0 4px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
 }
 .rte-color:hover {
@@ -163,10 +176,10 @@
   color: var(--rte-muted);
 }
 .rte-field input {
-  height: 34px;
-  padding: 0 8px;
-  border: 1px solid var(--rte-border);
-  border-radius: 6px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #d6d3d1;
+  border-radius: 8px;
   background: var(--rte-bg);
   color: var(--rte-fg);
   font: inherit;
@@ -182,10 +195,10 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 34px;
-  padding: 0 10px;
-  border: 1px solid var(--rte-border);
-  border-radius: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #d6d3d1;
+  border-radius: 8px;
   background: var(--rte-bg);
   color: var(--rte-fg);
   font: inherit;
@@ -224,10 +237,10 @@
 /* ---------- writing area: mirrors docs/CONTRACTS.md "Editor output" ---------- */
 
 .rte-content {
-  min-height: 320px;
-  padding: 16px 20px 24px;
+  min-height: 420px;
+  padding: 20px 24px 32px;
   font-size: 17px;
-  line-height: 1.65;
+  line-height: 1.7;
   outline: none;
   overflow-wrap: break-word;
 }
@@ -261,7 +274,7 @@
 }
 .rte-content blockquote {
   padding-left: 1em;
-  border-left: 3px solid var(--rte-border);
+  border-left: 3px solid #d6d3d1;
   color: var(--rte-muted);
   font-style: italic;
 }
@@ -271,8 +284,9 @@
   margin: 1.5em 0;
 }
 .rte-content a {
-  color: var(--rte-accent);
+  color: #1d4ed8;
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 .rte-content mark {
   color: inherit;
@@ -285,7 +299,7 @@
   margin-inline: auto;
   max-width: 100%;
   height: auto;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 .rte-content img[data-size="small"] {
   width: 33%;

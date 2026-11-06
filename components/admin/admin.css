@@ -1,0 +1,32 @@
+/* Admin-only extras that Tailwind utilities cannot express. Loaded by app/admin layouts. */
+
+@keyframes admin-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+
+@keyframes admin-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes admin-slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+.admin-root ::selection {
+  background: #e7e5e4;
+  color: #1c1917;
+}
+
+/* The editor toolbar sticks below the phone top bar (h-14), and to the top on desktop. */
+@media (max-width: 1023.98px) {
+  .admin-root .rte-bar {
+    top: 3.5rem;
+  }
+}
